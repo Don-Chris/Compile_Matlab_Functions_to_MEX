@@ -1,5 +1,7 @@
 # Compile Matlab Functions to MEX
-Compilates Matlab Functions to fast Mex-files that can then be called in Matlab. Should work with every function that has %#codegen and no errors. Feel free to post issues on my github page.
+Compilates Matlab Functions to fast Mex-files that can then be called in Matlab. Should work with every function that has %#codegen and no errors. Feel free to post issues on my github page. Matlab functions with for loops are significantly slower than a c-code call of the same code. 
+
+This repository uses the Matlab Coder Interface to generate c-code that can then be executed in Matlab. Only an example command needs to be passed to the "compile_function.m" function to successfully generate c code and a wrapper function. The wrapper function ensures that the inputs to the generated c-code have the correct form and data type.
 
 [![View Compile_Matlab_Functions_to_MEX on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://de.mathworks.com/matlabcentral/fileexchange/108654-compile_matlab_functions_to_mex)
 
