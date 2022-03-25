@@ -124,7 +124,7 @@ try
     eval(codeCommand)
 catch message
     cd(currentpath);
-    error(message)
+    error(message.message)
 end
 cd(currentpath);
 
