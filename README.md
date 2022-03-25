@@ -1,5 +1,5 @@
 # Compile_Matlab_Functions_to_MEX
-Compilates Matlab Functions to fast Mex-files that can then be called in Matlab.
+Compilates Matlab Functions to fast Mex-files that can then be called in Matlab. Should work with every function that has %#codegen and no errors. Feel free to post issues on my github page.
 
 [![View Compile_Matlab_Functions_to_MEX on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://de.mathworks.com/matlabcentral/fileexchange/108654-compile_matlab_functions_to_mex)
 
