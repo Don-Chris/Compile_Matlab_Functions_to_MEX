@@ -82,6 +82,7 @@ if isempty(opts.path) % find the path to the mex file (same folder as orig funct
     end
     pathparts = strsplit(filepath,delimiter);
     fullpath = strjoin(pathparts(1:end-1),delimiter);
+    opts.path = fullpath;
 else
     fullpath = opts.path;
 end
