@@ -26,6 +26,9 @@ function fcnHandle = compile_function(command,varargin)
 %                      can be changed to e.g. "C:/path/to/file/"
 %                      path to the mex and wrapper file
 %
+%          'path_coder': like 'path' (default), e.g. "C:/path/to/file/"
+%                      path to the generated c-code 
+%
 %          'exactSize': false (default)
 %                      Should all input arguments have the same size as in 
 %                      the examples command or should all arguments with 
@@ -60,6 +63,7 @@ opts.sortStruct = false;
 opts.dataType = '';
 opts.create_wrapper = true;
 opts.path = '';
+opts.path_coder = '';
 opts = checkOptions(opts,varargin);
 
 
@@ -74,7 +78,7 @@ fcnName = command(list_equal:list_bracket1(1)-1);
 
 %% Get Path to mex file
 filepath = which(fcnName);
-if isempty(opts.path) % find the path to the mex file (same folder as orig function)
+if isempty(opts.path) && ~isempty(filepath) % find the path to the mex file (same folder as orig function)
     if isempty(strfind(filepath,'\'))
         delimiter = '/';
     else
@@ -83,10 +87,17 @@ if isempty(opts.path) % find the path to the mex file (same folder as orig funct
     pathparts = strsplit(filepath,delimiter);
     fullpath = strjoin(pathparts(1:end-1),delimiter);
     opts.path = fullpath;
+elseif isempty(filepath)
+    warning([' - compile_function: Unable to locate function ''',fcnName,'''.'])
+    fullpath = pwd;
+    opts.path = fullpath;
 else
     fullpath = opts.path;
 end
 
+if isempty(opts.path_coder)
+    opts.path_coder = fullpath;
+end
 
 %% Check if File is updated
 mexfileName = [fcnName,'_mex.',mexext];

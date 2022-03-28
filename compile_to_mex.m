@@ -22,6 +22,9 @@ function fcnHandle = compile_to_mex( command, varargin )
 %          'path': currentPath (default), e.g. "C:/path/to/file/"
 %                      path to the mex and wrapper file
 %
+%          'path_coder': like 'path' (default), e.g. "C:/path/to/file/"
+%                      path to the generated c-code 
+%
 %          'type': 'mex' (default)
 %                      See Matlab Coder for options
 %
@@ -55,12 +58,19 @@ function fcnHandle = compile_to_mex( command, varargin )
 
 %% Get Options
 opts.path = pwd;
+opts.path_coder = '';
 opts.type = 'mex';
 opts.exactSize = false;
 opts.sortStruct = false;
 opts.dataType = '';
 opts.create_wrapper = true;
 opts = checkOptions(opts,varargin);
+
+
+%% Path
+if isempty(opts.path_coder)
+    opts.path_coder = opts.path;
+end
 
 
 %% Get Function name and arguments string
@@ -115,13 +125,20 @@ end
 %% CodeGen
 cfg = coder.config(opts.type);
 cfg.GenerateReport = true;
+cfg.EnableJIT = true;
 
 codeCommand = sprintf('codegen -config cfg %s -args ARGS',fcnName);
 
+mex_fcn_name = [fcnName,'_mex'];
 currentpath = cd;
 try
-    cd(opts.path)
+    cd(opts.path_coder)
     eval(codeCommand)
+    if ~strcmp(opts.path_coder,opts.path)
+        source_path = fullfile(opts.path_coder,[mex_fcn_name,'.',mexext]);
+        new_path = fullfile(opts.path,[mex_fcn_name,'.',mexext]);
+        movefile(source_path,new_path);
+    end
 catch message
     cd(currentpath);
     error(message.message)
@@ -130,7 +147,6 @@ cd(currentpath);
 
 
 %% Create Wrapper
-mex_fcn_name = [fcnName,'_mex'];
 if opts.create_wrapper
     fcnHandle = create_mex_wrapper(mex_fcn_name, ARGS, argsChar, ...
         'path',opts.path);
