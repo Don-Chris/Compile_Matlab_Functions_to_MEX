@@ -48,6 +48,12 @@ function fcnHandle = compile_to_mex( command, varargin )
 %                      function) but it converts all inputs to the compiled
 %                      datatype and changes the order of the structs to the
 %                      needed order.
+%          'inputs': [] (default), e.g. a struct with all inputs to the
+%                      function, the order of the fields matter.
+%                      This option can be used to give all inputs to the
+%                      code generation. If this option is not used, the
+%                      inputs will be evaluated in the base workspace with
+%                      the names in the example Command.
 %
 %
 % ------- Created by -------
@@ -64,6 +70,7 @@ opts.exactSize = false;
 opts.sortStruct = false;
 opts.dataType = '';
 opts.create_wrapper = true;
+opts.inputs = [];
 opts = checkOptions(opts,varargin);
 
 
@@ -73,54 +80,74 @@ if isempty(opts.path_coder)
 end
 
 
-%% Get Function name and arguments string
+%% Get Function name
 list_bracket1 = strfind(command,'(');
 list_bracket2 = strfind(command,')');
 list_equal = strfind(command,'=');
 if isempty(list_equal)
     list_equal = 1;
 end
+if isempty(list_bracket1)
+    list_bracket1 = length(command)+1;
+end
 fcnName = command(list_equal:list_bracket1(1)-1);
-arguments = command(list_bracket1(1)+1:list_bracket2(end)-1);
+
 
 
 %% Get list of Arguments
-list_comma = [0,strfind(arguments,','),length(arguments)+1];
-list_bracket1 = strfind(arguments,'(');
-list_bracket2 = strfind(arguments,')');
-nextStartPos = 1;
-cnt = 0;
-argsChar = cell(length(list_comma)-2,1);
-for idx = 2:length(list_comma)
-    if length(list_bracket1) ~= length(list_bracket2)
-        error([' - compile_to_mex: Command "', command, '" is probably wrong.'])
+if isempty(opts.inputs) % Evaluate in base workspace
+    % Get input names
+    arguments = command(list_bracket1(1)+1:list_bracket2(end)-1);
+
+    list_comma = [0,strfind(arguments,','),length(arguments)+1];
+    list_bracket1 = strfind(arguments,'(');
+    list_bracket2 = strfind(arguments,')');
+    nextStartPos = 1;
+    cnt = 0;
+    argsChar = cell(length(list_comma)-2,1);
+    for idx = 2:length(list_comma)
+        if length(list_bracket1) ~= length(list_bracket2)
+            error([' - compile_to_mex: Command "', command, '" is probably wrong.'])
+        end
+        if isempty(list_bracket1) && isempty(list_bracket2)
+            count_bracket1 = 0;
+            count_bracket2 = 0;
+        else
+            count_bracket1 = sum(list_bracket1 < list_comma(idx) && list_bracket1 > list_comma(idx-1) );
+            count_bracket2 = sum(list_bracket2 < list_comma(idx) && list_bracket2 > list_comma(idx-1) );
+        end
+
+        if count_bracket1 == count_bracket2
+            argsChar{cnt+1} = arguments(nextStartPos:list_comma(idx)-1);
+            nextStartPos = list_comma(idx) + 1;
+            cnt = cnt + 1;
+        end
     end
-    if isempty(list_bracket1) && isempty(list_bracket2)
-        count_bracket1 = 0;
-        count_bracket2 = 0;
-    else
-        count_bracket1 = sum(list_bracket1 < list_comma(idx) && list_bracket1 > list_comma(idx-1) );
-        count_bracket2 = sum(list_bracket2 < list_comma(idx) && list_bracket2 > list_comma(idx-1) );
-    end
+    argsChar = argsChar(1:cnt);
     
-    if count_bracket1 == count_bracket2
-        argsChar{cnt+1} = arguments(nextStartPos:list_comma(idx)-1);
-        nextStartPos = list_comma(idx) + 1;
-        cnt = cnt + 1;
+    % Get Data
+    argsData = cell(length(argsChar),1);
+    for idx = 1:length(argsChar)
+        argsData{idx} = evalin('base', [argsChar{idx},';']);
+
+    end
+else % use opts.inputs
+    
+    % Get input names
+    argsChar = fieldnames(opts.inputs);
+    
+    % Get Data
+    argsData = cell(length(argsChar),1);
+    for idx = 1:length(argsChar)
+        argsData{idx} = opts.inputs.(argsChar{idx});
     end
 end
-argsChar = argsChar(1:cnt);
-
 
 %% Get Argument data and type info
 ARGS = cell(length(argsChar),1);
-argsData = cell(length(argsChar),1);
 for idx = 1:length(argsChar)
-    argsData{idx} = evalin('base', [argsChar{idx},';']);
-    
     ARGS{idx} = getType(argsData{idx},opts);
 end
-
 
 %% CodeGen
 cfg = coder.config(opts.type);

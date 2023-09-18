@@ -8,9 +8,11 @@ function fcnHandle = compile_function(command,varargin)
 %                   right input arguments of the matlab function.
 %                   The command must be executable in the base workspace,
 %                   so all named arguments and the function name have to 
-%                   exist.
+%                   exist. 
 %                   e.g.: 'fcnName(argument1,argument2,structElement)'
-%
+%                   If the option 'inputs' is used, the command only needs
+%                   to have the function name:
+%                   e.g.: 'fcnName'
 %
 % ------- Features: --------
 %       - Finds the original function-path and checks if the function has 
@@ -49,6 +51,12 @@ function fcnHandle = compile_function(command,varargin)
 %                      function) but it converts all inputs to the compiled
 %                      datatype and changes the order of the structs to the
 %                      needed order.
+%          'inputs': [] (default), e.g. a struct with all inputs to the
+%                      function, the order of the fields matter.
+%                      This option can be used to give all inputs to the
+%                      code generation. If this option is not used, the
+%                      inputs will be evaluated in the base workspace with
+%                      the names in the example Command.
 %
 %
 % ------- Created by -------
@@ -64,6 +72,7 @@ opts.dataType = '';
 opts.create_wrapper = true;
 opts.path = '';
 opts.path_coder = '';
+opts.inputs = [];
 opts = checkOptions(opts,varargin);
 
 
@@ -72,6 +81,9 @@ list_bracket1 = strfind(command,'(');
 list_equal = strfind(command,'=');
 if isempty(list_equal)
     list_equal = 1;
+end
+if isempty(list_bracket1)
+    list_bracket1 = length(command)+1;
 end
 fcnName = command(list_equal:list_bracket1(1)-1);
 
