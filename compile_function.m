@@ -120,8 +120,10 @@ fcnUpdated = fileIsNewer(filepath,mexfilePath);
 %% compile to c code if necessary
 if fcnUpdated
     fcnHandle = compile_to_mex(command, opts);
-else
+elseif opts.create_wrapper
     fcnHandle = str2func([fcnName,'_wrapper']);
+else
+    fcnHandle = str2func([fcnName,'_mex']);
 end
 end
 
